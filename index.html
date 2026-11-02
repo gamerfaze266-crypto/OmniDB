@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>OmniDB - Media Hub</title>
+    
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1170/1170576.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="OmniDB">
+    <meta name="theme-color" content="#0d0d0f">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            yellow: '#f5c518',
+                            hover: '#e2b616',
+                            dark: '#0d0d0f',
+                            card: '#1a1a1e',
+                            border: '#2a2a30'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-brand-dark text-gray-100 font-sans antialiased min-h-screen pb-12 select-none">
+
+    <header class="sticky top-0 z-30 bg-brand-dark/95 backdrop-blur border-b border-brand-border px-4 py-3">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <div class="bg-brand-yellow text-black font-black px-2.5 py-1 rounded text-xl tracking-tighter">OmniDB</div>
+            </div>
+            <div class="flex-1 max-w-md">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="text" id="searchInput" placeholder="Search saved items..." class="w-full bg-brand-card border border-brand-border rounded-full pl-9 pr-4 py-1.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-brand-yellow">
+                </div>
+            </div>
+            <button id="openAddBtn" class="bg-brand-yellow hover:bg-brand-hover text-black font-bold px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-plus"></i> <span>Add</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1" id="categoryContainer">
+            <button onclick="setCategory('all')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-brand-yellow text-black transition">All</button>
+            <button onclick="setCategory('movies')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-brand-card text-gray-400 border border-brand-border hover:border-gray-500 transition">Movies</button>
+            <button onclick="setCategory('games')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-brand-card text-gray-400 border border-brand-border hover:border-gray-500 transition">Games</button>
+            <button onclick="setCategory('toys')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-brand-card text-gray-400 border border-brand-border hover:border-gray-500 transition">Toys</button>
+            <button onclick="setCategory('tech')" class="cat-btn px-4 py-1.5 rounded-full text-xs font-bold bg-brand-card text-gray-400 border border-brand-border hover:border-gray-500 transition">Tech</button>
+        </div>
+
+        <div id="spotlightCard" class="relative rounded-2xl overflow-hidden bg-brand-card border border-brand-border"></div>
+
+        <div>
+            <h2 class="text-lg font-bold text-gray-200 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-fire text-brand-yellow"></i> Popular & Trending
+            </h2>
+            <div id="itemGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+        </div>
+    </main>
+
+    <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-brand-card border border-brand-border w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl p-6 relative">
+            <button id="closeDetailBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl p-2"><i class="fa-solid fa-xmark"></i></button>
+            <div id="detailContent"></div>
+        </div>
+    </div>
+
+    <!-- Add Item Modal -->
+    <div id="addModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-brand-card border border-brand-border w-full max-w-md rounded-2xl p-6 relative">
+            <button id="closeAddBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-lg font-bold text-white mb-3">Add New Entry</h3>
+            
+            <div class="mb-4 p-3 bg-brand-dark/50 border border-brand-border rounded-xl">
+                <label class="block text-xs font-bold text-brand-yellow mb-1">⚡ Auto-Fetch Poster & Details</label>
+                <div class="flex gap-2">
+                    <input type="text" id="apiSearchQuery" placeholder="Type title (e.g. Spider-Man)..." class="w-full bg-brand-dark border border-brand-border rounded-lg p-2 text-xs text-white focus:outline-none focus:border-brand-yellow">
+                    <button type="button" id="fetchBtn" class="bg-brand-yellow hover:bg-brand-hover text-black font-bold px-3 py-1 text-xs rounded-lg whitespace-nowrap transition">Fetch</button>
+                </div>
+                <div id="fetchStatus" class="text-[10px] text-gray-400 mt-1 hidden">Searching database...</div>
+            </div>
+
+            <form id="addForm" class="space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">Title</label>
+                    <input type="text" id="newTitle" required class="w-full bg-brand-dark border border-brand-border rounded-lg p-2.5 text-white focus:outline-none focus:border-brand-yellow">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 mb-1">Category</label>
+                        <select id="newCat" class="w-full bg-brand-dark border border-brand-border rounded-lg p-2.5 text-white focus:outline-none focus:border-brand-yellow">
+                            <option value="movies">Movie</option>
+                            <option value="games">Game</option>
+                            <option value="toys">Toy</option>
+                            <option value="tech">Tech</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 mb-1">Rating (1-10)</label>
+                        <input type="number" id="newScore" min="1" max="10" step="0.1" required class="w-full bg-brand-dark border border-brand-border rounded-lg p-2.5 text-white focus:outline-none focus:border-brand-yellow">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">Image URL</label>
+                    <input type="url" id="newImg" required placeholder="https://..." class="w-full bg-brand-dark border border-brand-border rounded-lg p-2.5 text-white focus:outline-none focus:border-brand-yellow">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">Description</label>
+                    <textarea id="newDesc" rows="2" required class="w-full bg-brand-dark border border-brand-border rounded-lg p-2.5 text-white focus:outline-none focus:border-brand-yellow"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-brand-yellow text-black font-bold py-2.5 rounded-lg hover:bg-brand-hover transition">Publish Entry</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const initialItems = [
+            { id: 1, title: 'Dune: Part Two', category: 'movies', score: 8.9, reviews: 1420, year: '2024', img: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500&auto=format&fit=crop', desc: 'Paul Atreides unites with Chani and the Fremen while seeking revenge.' },
+            { id: 2, title: 'Elden Ring', category: 'games', score: 9.6, reviews: 3890, year: '2022', img: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&auto=format&fit=crop', desc: 'An action RPG set in the Lands Between.' }
+        ];
+
+        let state = JSON.parse(localStorage.getItem('omnidb_state')) || { items: initialItems, activeCategory: 'all' };
+
+        function saveState() {
+            localStorage.setItem('omnidb_state', JSON.stringify(state));
+            render();
+        }
+
+        document.getElementById('openAddBtn').addEventListener('click', () => toggleModal('addModal', true));
+        document.getElementById('closeAddBtn').addEventListener('click', () => toggleModal('addModal', false));
+        document.getElementById('closeDetailBtn').addEventListener('click', () => toggleModal('detailModal', false));
+        document.getElementById('fetchBtn').addEventListener('click', searchExternalDatabase);
+
+        async function searchExternalDatabase() {
+            const query = document.getElementById('apiSearchQuery').value.trim();
+            const status = document.getElementById('fetchStatus');
+            if(!query) return;
+
+            status.innerText = "Searching database...";
+            status.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`https://www.omdbapi.com/?t=${encodeURIComponent(query)}&apikey=trilogy`);
+                const data = await res.json();
+
+                if(data && data.Response !== "False") {
+                    document.getElementById('newTitle').value = data.Title || query;
+                    document.getElementById('newImg').value = (data.Poster && data.Poster !== "N/A") ? data.Poster : '';
+                    document.getElementById('newDesc').value = data.Plot || '';
+                    if(data.imdbRating && data.imdbRating !== "N/A") {
+                        document.getElementById('newScore').value = data.imdbRating;
+                    }
+                    document.getElementById('newCat').value = data.Type === 'game' ? 'games' : 'movies';
+                    status.innerText = "✓ Found and auto-filled details!";
+                } else {
+                    status.innerText = "⚠️ Item not found in open DB, enter manually below.";
+                }
+            } catch(e) {
+                status.innerText = "⚠️ Couldn't fetch automatically. Please fill manually.";
+            }
+        }
+
+        function setCategory(cat) {
+            state.activeCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                const isActive = btn.innerText.toLowerCase() === cat || (cat === 'all' && btn.innerText === 'All');
+                btn.className = `cat-btn px-4 py-1.5 rounded-full text-xs font-bold transition ${isActive ? 'bg-brand-yellow text-black' : 'bg-brand-card text-gray-400 border border-brand-border hover:border-gray-500'}`;
+            });
+            render();
+        }
+
+        function render() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = state.items.filter(item => {
+                const matchesCat = state.activeCategory === 'all' || item.category === state.activeCategory;
+                const matchesSearch = item.title.toLowerCase().includes(query) || item.desc.toLowerCase().includes(query);
+                return matchesCat && matchesSearch;
+            });
+
+            const spot = filtered[0] || state.items[0];
+            if (spot) {
+                document.getElementById('spotlightCard').innerHTML = `
+                    <div class="h-64 sm:h-80 w-full relative">
+                        <img src="${spot.img}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-brand-card via-brand-card/60 to-transparent flex flex-col justify-end p-6">
+                            <span class="text-xs uppercase font-bold text-brand-yellow tracking-wider mb-1">${spot.category}</span>
+                            <h1 class="text-2xl sm:text-4xl font-extrabold text-white">${spot.title}</h1>
+                            <p class="text-xs sm:text-sm text-gray-300 line-clamp-2 max-w-xl my-2">${spot.desc}</p>
+                            <div class="flex items-center gap-4 mt-2">
+                                <div class="flex items-center gap-1 text-brand-yellow font-bold text-lg"><i class="fa-solid fa-star"></i> ${spot.score}</div>
+                                <button onclick="openDetail(${spot.id})" class="bg-white/10 hover:bg-white/20 text-white font-semibold px-4 py-1.5 rounded-lg text-xs backdrop-blur">View Details</button>
+                            </div>
+                        </div>
+                    </div>`;
+            } else {
+                document.getElementById('spotlightCard').innerHTML = `<div class="p-8 text-center text-gray-400">No items saved yet. Tap + Add above!</div>`;
+            }
+
+            const grid = document.getElementById('itemGrid');
+            grid.innerHTML = filtered.map(item => `
+                <div onclick="openDetail(${item.id})" class="bg-brand-card border border-brand-border rounded-xl overflow-hidden cursor-pointer hover:border-brand-yellow transition group">
+                    <div class="h-44 overflow-hidden relative">
+                        <img src="${item.img}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                        <div class="absolute top-2 right-2 bg-black/70 backdrop-blur text-brand-yellow text-xs font-bold px-2 py-0.5 rounded flex items-center gap-1">
+                            <i class="fa-solid fa-star text-[10px]"></i> ${item.score}
+                        </div>
+                    </div>
+                    <div class="p-3">
+                        <span class="text-[10px] uppercase font-bold text-gray-500">${item.category}</span>
+                        <h3 class="font-bold text-sm text-white group-hover:text-brand-yellow transition truncate">${item.title}</h3>
+                    </div>
+                </div>`).join('');
+        }
+
+        function openDetail(id) {
+            const item = state.items.find(i => i.id === id);
+            if (!item) return;
+            document.getElementById('detailContent').innerHTML = `
+                <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                    <img src="${item.img}" class="w-full sm:w-40 h-48 object-cover rounded-xl">
+                    <div class="space-y-2">
+                        <span class="text-xs uppercase font-bold text-brand-yellow">${item.category}</span>
+                        <h2 class="text-2xl font-bold text-white">${item.title}</h2>
+                        <div class="flex items-center gap-2 text-brand-yellow font-bold text-xl"><i class="fa-solid fa-star"></i> ${item.score} <span class="text-xs text-gray-400 font-normal">/ 10</span></div>
+                        <p class="text-sm text-gray-300">${item.desc}</p>
+                    </div>
+                </div>`;
+            toggleModal('detailModal', true);
+        }
+
+        function toggleModal(id, show) {
+            const modal = document.getElementById(id);
+            if(show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        document.getElementById('addForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newItem = {
+                id: Date.now(),
+                title: document.getElementById('newTitle').value,
+                category: document.getElementById('newCat').value,
+                score: parseFloat(document.getElementById('newScore').value),
+                reviews: 1,
+                year: '2026',
+                img: document.getElementById('newImg').value,
+                desc: document.getElementById('newDesc').value
+            };
+            state.items.unshift(newItem);
+            saveState();
+            toggleModal('addModal', false);
+            document.getElementById('addForm').reset();
+            document.getElementById('apiSearchQuery').value = '';
+            document.getElementById('fetchStatus').classList.add('hidden');
+        });
+
+        document.getElementById('searchInput').addEventListener('input', render);
+        render();
+    </script>
+</body>
+</html>
